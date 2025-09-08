@@ -4,12 +4,6 @@ import { generateResponse } from './gemini';
 import fs from 'fs/promises';
 import path from 'path';
 
-// Load environment variables
-if (!process.env.GEMINI_API_KEY) {
-  console.error("GEMINI_API_KEY not found in environment variables");
-  process.exit(1);
-}
-
 console.log("Starting server...");
 
 const app = new Elysia()
@@ -21,31 +15,22 @@ const app = new Elysia()
   .get('/', () => 'Open Lovable Server is running')
   
   .post('/api/generate', async ({ body }) => { 
-    console.log("Generate API called with prompt:", body.prompt?.substring(0, 100) + "...");
+    console.log("Generate API called");
+    const { prompt } = body;
     
-    try {
-      const { prompt } = body;
-      
-      const stream = new ReadableStream({
-        start(controller) {
-          generateResponse(prompt, controller);
-        }
-      });
+    const stream = new ReadableStream({
+      start(controller) {
+        generateResponse(prompt, controller);
+      }
+    });
 
-      return new Response(stream, {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        },
-      });
-    } catch (error) {
-      console.error("Error in generate endpoint:", error);
-      return new Response(JSON.stringify({ error: (error as Error).message }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
   }, {
     body: t.Object({ prompt: t.String() })
   })
@@ -69,7 +54,7 @@ const app = new Elysia()
       return new Response(JSON.stringify({ success: false, message: (error as Error).message }), { status: 500 });
     }
   }, {
-    body: t.Object({ projectId: t.String(), prompt: t.String() })
+    body: t.Object({ projectId: t.String(), prompt: t.String(), model: t.String() })
   })
 
   .delete('/api/delete-project/:projectId', async ({ params }) => {

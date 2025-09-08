@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { ArrowUp, Loader2, Trash2 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { v4 as uuidv4 } from 'uuid';
@@ -24,6 +26,7 @@ const Header = () => (
 // This allows the main page component to know when a new project has been successfully created.
 const PromptInput = ({ onProjectCreate }: { onProjectCreate: (project: Project) => void }) => {
   const [prompt, setPrompt] = useState('');
+  const [model, setModel] = useState('gemini-2.0-flash-exp');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -33,24 +36,20 @@ const PromptInput = ({ onProjectCreate }: { onProjectCreate: (project: Project) 
     const projectId = uuidv4();
 
     try {
-      // Step 1: Call the backend to create the project files and install dependencies.
       await axios.post('http://localhost:3002/api/create-project', {
         projectId,
         prompt,
+        model,
       });
       
-      // Step 2: If the backend call is successful, create a new project object.
       const newProject: Project = {
         id: projectId,
         prompt,
         createdAt: new Date().toISOString(),
       };
       
-      // Step 3: Call the callback function from the parent to save the project to localStorage.
       onProjectCreate(newProject);
-      
-      // Step 4: Navigate the user to the editor for their new project.
-      navigate(`/project/${projectId}`, { state: { prompt } });
+      navigate(`/project/${projectId}`, { state: { prompt, model } });
 
     } catch (error) {
       console.error("Project creation failed:", error);
@@ -76,7 +75,25 @@ const PromptInput = ({ onProjectCreate }: { onProjectCreate: (project: Project) 
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
         />
-        <div className="flex items-center justify-end mt-3">
+        <div className="flex items-center justify-between mt-3">
+          <Select value={model} onValueChange={setModel}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="gemini-2.0-flash">
+                <div className="flex items-center gap-2">
+                  Gemini 2.0 Flash
+                </div>
+              </SelectItem>
+              <SelectItem value="gemini-2.5-flash">
+                <div className="flex items-center gap-2">
+                  Gemini 2.5 Flash
+                </div>
+              </SelectItem>
+              <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro</SelectItem>
+            </SelectContent>
+          </Select>
           <Button size="icon" className="w-9 h-9" onClick={handleSubmit} disabled={isLoading}>
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowUp className="w-5 h-5" />}
           </Button>
