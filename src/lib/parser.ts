@@ -4,7 +4,7 @@ import axios from 'axios';
 type StoreActions = Pick<ReturnType<typeof useProjectStore['getState']>, 'addMessage' | 'addOrUpdateFile' | 'deleteFile' | 'renameFile'>;
 
 enum ParseState { TEXT, TAG, CONTENT }
-const CONTENT_TAGS = ['lov-thinking', 'lov-write'];
+const CONTENT_TAGS = ['lov-thinking', 'lov-write', 'lov-add-dependency'];
 
 export class StreamingParser {
   private state: ParseState = ParseState.TEXT;
@@ -129,9 +129,30 @@ export class StreamingParser {
           });
         }
         break;
+      case 'lov-add-dependency':
+        const packageName = content.trim();
+        if (packageName) {
+          this.actions.addMessage({ type: 'system', content: `Installing dependency: ${packageName}` });
+          this.performDependencyInstall(packageName);
+        }
+        break;
     }
     this.currentTag = '';
     this.currentFilePath = '';
+  }
+
+  private async performDependencyInstall(packageName: string) {
+    try {
+      await axios.post('http://localhost:3002/api/install-dependency', {
+        projectId: this.projectId,
+        packageName: packageName
+      });
+      console.log(`Successfully installed dependency: ${packageName}`);
+      this.actions.addMessage({ type: 'system', content: `✅ Installed ${packageName}` });
+    } catch (error) {
+      console.error(`Failed to install dependency: ${packageName}`, error);
+      this.actions.addMessage({ type: 'system', content: `❌ Failed to install ${packageName}` });
+    }
   }
 
   private async performFileOperation(operation: { type: string, path?: string, content?: string, oldPath?: string, newPath?: string }) {

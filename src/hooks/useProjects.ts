@@ -3,64 +3,55 @@ import axios from 'axios';
 
 export interface Project {
   id: string;
-  prompt: string;
-  createdAt: string;
 }
-
-const LOCAL_STORAGE_KEY = 'openLovableProjects';
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load projects from localStorage on initial component mount
-  useEffect(() => {
+  // Fetch projects from API
+  const fetchProjects = useCallback(async () => {
     try {
-      const storedProjects = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedProjects) {
-        setProjects(JSON.parse(storedProjects));
+      setLoading(true);
+      const response = await axios.get('http://localhost:3002/api/projects');
+      if (response.data.success) {
+        setProjects(response.data.projects);
       }
     } catch (error) {
-      console.error("Failed to load projects from localStorage:", error);
+      console.error('Failed to fetch projects:', error);
       setProjects([]);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  /**
-   * Adds a new project to localStorage.
-   */
-  const addProject = useCallback((newProject: Project) => {
-    try {
-      const updatedProjects = [...projects, newProject];
-      setProjects(updatedProjects);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedProjects));
-    } catch (error) {
-      console.error("Failed to save project to localStorage:", error);
-    }
-  }, [projects]);
+  // Load projects on mount
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   /**
-   * Deletes a project from the backend and then from localStorage.
+   * Deletes a project from the backend and refreshes the list.
    */
   const deleteProject = useCallback(async (projectId: string) => {
-    // Simple confirmation dialog to prevent accidental deletion
     if (!window.confirm("Are you sure you want to delete this project and all its files? This action cannot be undone.")) {
       return;
     }
 
     try {
-      // 1. Call the backend to delete the physical files
       await axios.delete(`http://localhost:3002/api/delete-project/${projectId}`);
-
-      // 2. If successful, remove the project from the local state and localStorage
-      const updatedProjects = projects.filter((p) => p.id !== projectId);
-      setProjects(updatedProjects);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedProjects));
-
+      // Refresh the projects list after successful deletion
+      await fetchProjects();
     } catch (error) {
       console.error("Failed to delete project:", error);
       alert("Could not delete the project files on the server. Please check the console.");
     }
-  }, [projects]);
+  }, [fetchProjects]);
 
-  return { projects, addProject, deleteProject };
+  return { 
+    projects, 
+    loading,
+    deleteProject, 
+    refreshProjects: fetchProjects 
+  };
 }

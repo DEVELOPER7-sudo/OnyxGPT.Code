@@ -21,6 +21,7 @@ import {
 import { Code, Eye, AlertTriangle, MessageSquare, Cog } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
+import { LivePreview } from "@/components/LivePreview";
 
 // This component is correct and has no issues.
 const MissingPromptNotice = () => (
@@ -64,11 +65,9 @@ const EditorPage = () => {
   const filesMap = useProjectStore((state) => state.files);
   const files = Array.from(filesMap.values());
 
-  // --- START OF THE FIX ---
   // Pass BOTH the initialPrompt and the projectId to the hook.
   // The hook will now have everything it needs to start the stream.
   useAgentStream(initialPrompt, projectId);
-  // --- END OF THE FIX ---
 
   if (!initialPrompt) {
     return <MissingPromptNotice />;
@@ -122,8 +121,8 @@ const EditorPage = () => {
                  </Accordion>
               </TabsContent>
               <TabsContent value="preview" className="flex-grow mt-4">
-                 <div className="w-full h-full bg-background rounded-md flex items-center justify-center border">
-                    <p className="text-muted-foreground">Live preview coming soon.</p>
+                 <div className="w-full h-full bg-background rounded-md border overflow-hidden">
+                    <LivePreview />
                  </div>
               </TabsContent>
             </Tabs>

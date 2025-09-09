@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { ArrowUp, Loader2, Trash2 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { v4 as uuidv4 } from 'uuid';
@@ -22,11 +21,10 @@ const Header = () => (
   </header>
 );
 
-// The PromptInput component is updated to accept a callback function `onProjectCreate`.
-// This allows the main page component to know when a new project has been successfully created.
-const PromptInput = ({ onProjectCreate }: { onProjectCreate: (project: Project) => void }) => {
+// The PromptInput component is updated to refresh projects after creation.
+const PromptInput = ({ onProjectCreate }: { onProjectCreate: () => void }) => {
   const [prompt, setPrompt] = useState('');
-  const [model, setModel] = useState('gemini-2.0-flash-exp');
+  const [model, setModel] = useState('gemini-2.0-flash');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -42,13 +40,7 @@ const PromptInput = ({ onProjectCreate }: { onProjectCreate: (project: Project) 
         model,
       });
       
-      const newProject: Project = {
-        id: projectId,
-        prompt,
-        createdAt: new Date().toISOString(),
-      };
-      
-      onProjectCreate(newProject);
+      onProjectCreate(); // Refresh the projects list
       navigate(`/project/${projectId}`, { state: { prompt, model } });
 
     } catch (error) {
@@ -105,10 +97,10 @@ const PromptInput = ({ onProjectCreate }: { onProjectCreate: (project: Project) 
 
 const IndexPage = () => {
   // Use our custom hook to get the list of projects and the functions to manage them.
-  const { projects, addProject, deleteProject } = useProjects();
+  const { projects, loading, deleteProject, refreshProjects } = useProjects();
   
   // Sort projects to display the most recently created ones first.
-  const sortedProjects = projects.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const sortedProjects = projects.sort((a, b) => a.id.localeCompare(b.id));
 
   return (
     <div className="min-h-screen flex flex-col items-center w-full px-4 relative overflow-hidden">
@@ -126,29 +118,33 @@ const IndexPage = () => {
           Create applications and websites by describing them to an AI agent.
         </p>
         
-        {/* Pass the `addProject` function to the PromptInput component. */}
-        <PromptInput onProjectCreate={addProject} />
+        {/* Pass the `refreshProjects` function to the PromptInput component. */}
+        <PromptInput onProjectCreate={refreshProjects} />
         
         <div className="mt-24 w-full max-w-4xl">
           <h2 className="text-2xl font-semibold mb-4 text-left">My Projects</h2>
-          {sortedProjects.length > 0 ? (
+          {loading ? (
+            <div className="p-8 text-center">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+              <p className="text-muted-foreground">Loading projects...</p>
+            </div>
+          ) : sortedProjects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sortedProjects.map((project) => (
                 <Card key={project.id} className="text-left flex flex-col">
                   <CardHeader>
-                    <CardTitle className="truncate text-lg" title={project.prompt}>
-                      {project.prompt}
+                    <CardTitle className="truncate text-lg" title={project.id}>
+                      Project {project.id.slice(0, 8)}...
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex-grow">
                     <p className="text-sm text-muted-foreground">
-                      {/* Use date-fns for human-readable time */}
-                      Created {formatDistanceToNow(new Date(project.createdAt), { addSuffix: true })}
+                      Project ID: {project.id}
                     </p>
                   </CardContent>
                   <CardFooter className="flex justify-between items-center">
                     {/* Link to re-open the project editor */}
-                    <Link to={`/project/${project.id}`} state={{ prompt: project.prompt }}>
+                    <Link to={`/project/${project.id}`}>
                       <Button variant="outline" size="sm">Open</Button>
                     </Link>
                     {/* Button to delete the project */}
