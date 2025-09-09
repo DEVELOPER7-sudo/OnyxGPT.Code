@@ -4,7 +4,19 @@
 
 Open Lovable is an open-source, AI-driven web application builder. It's a "no-code" tool with a conversational interface, allowing you to describe the application you want to build, and watch as an AI agent writes the code, sets up the files, and brings your vision to life in real time.
 
-![Open Lovable Screenshot](public/og-image.png)
+## 📸 Demo Screenshots
+
+### Dashboard
+![Dashboard](public/assets/dashboard.png)
+
+### AI Agent in Action
+![Editor](public/assets/editor.png)
+
+### Live Preview
+![Live Preview](public/assets/live-preview.png)
+
+### Generated Website Example
+![Website Demo](public/assets/website-demo-1.png)
 
 ## ✨ Vision
 
@@ -22,13 +34,14 @@ Open Lovable combines a frontend built with Vite and React with a backend powere
 4.  **Live Parsing:** The AI's response, which is a stream of structured commands and code, is parsed in real-time on the frontend.
 5.  **UI Updates:** As the parser identifies commands (`<lov-write>`, `<lov-rename>`, etc.), it updates the UI to show you the agent's plan and the code being generated.
 6.  **File Operations:** Simultaneously, these commands are sent to the backend, which performs the actual file system operations—writing, renaming, and deleting files within your project's sandboxed directory.
+7.  **Live Preview:** Watch your application come to life with an integrated live preview that updates as the AI writes code.
 
 ## 💻 Tech Stack
 
 -   **Frontend:** React, TypeScript, Vite, Tailwind CSS
 -   **UI Components:** [shadcn/ui](https://ui.shadcn.com/)
 -   **Backend:** Bun, [ElysiaJS](https://elysiajs.com/)
--   **AI:** Google Gemini API (specifically `gemini-1.5-flash`)
+-   **AI:** Google Gemini API (supports multiple models: `gemini-2.0-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`)
 -   **State Management:** Zustand
 -   **API Communication:** Axios, Native Web Streams API
 
@@ -71,21 +84,59 @@ Follow these steps to get Open Lovable running on your local machine.
 5.  **Open your browser:**
     -   Navigate to `http://localhost:8080` (or whatever port Vite announces). You should see the Open Lovable homepage.
 
+## ✨ Features
+
+- **🤖 AI-Powered Development:** Describe your app and watch AI build it
+- **📱 Live Preview:** See your application update in real-time as code is generated
+- **📁 Project Management:** Dashboard to manage multiple projects
+- **🔄 Real-time Streaming:** Watch the AI agent think and code in real-time
+- **🎨 Modern UI:** Clean, responsive interface built with Tailwind CSS
+- **🔧 Multiple AI Models:** Choose from different Gemini models based on your needs
+- **💾 Persistent Projects:** All projects are saved and can be reopened anytime
+
 ## 🗺️ Project Roadmap
 
-Open Lovable is just getting started. Here are some of the features and improvements planned for the future:
+Open Lovable is actively being developed. Here are some of the features and improvements planned:
 
--   [ ] **Live Preview:** An `<iframe>` panel that shows a real-time, sandboxed preview of the generated application as the code is written.
+-   [x] **Live Preview:** An `<iframe>` panel that shows a real-time, sandboxed preview of the generated application as the code is written.
 -   [ ] **Interactive Editing:** Allow users to click on elements in the preview to inspect and modify their properties.
 -   [ ] **Follow-up Prompts:** Implement a chat interface to allow for iterative development ("Now, change the color of the primary button to blue").
--   [ ] **Dependency Management:** Handle `<lov-add-dependency>` commands to automatically install new packages with `bun add`.
+-   [x] **Dependency Management:** Handle `<lov-add-dependency>` commands to automatically install new packages with `bun add`.
 -   [ ] **Deployment:** A one-click button to deploy the generated project to a hosting provider like Vercel or Netlify.
--   [ ] **Model Flexibility:** Allow users to choose between different AI models.
+-   [x] **Model Flexibility:** Allow users to choose between different AI models.
+-   [ ] **Export Projects:** Download generated projects as ZIP files
+-   [ ] **Template Library:** Pre-built templates for common application types
 
 ## 🤝 Contributing
 
-Contributions are welcome! If you have an idea for a new feature, a bug fix, or a documentation improvement, please feel free to open an issue or submit a pull request.
+We welcome contributions! Whether you want to:
+
+- 🐛 Report bugs
+- 💡 Suggest new features  
+- 📝 Improve documentation
+- 🔧 Submit code changes
+
+Please feel free to open an issue or submit a pull request.
+
+### Development Setup
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes and test them
+4. Commit your changes: `git commit -m 'Add amazing feature'`
+5. Push to the branch: `git push origin feature/amazing-feature`
+6. Open a Pull Request
+
+## 📄 License
+
+This project is open-source and licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Google Gemini AI](https://ai.google.dev/)
+- UI components from [shadcn/ui](https://ui.shadcn.com/)
+- Powered by [Bun](https://bun.sh/) and [Vite](https://vitejs.dev/)
 
 ---
 
-This project is open-source and licensed under the MIT License.
+**Made with ❤️ by AniketDandgavhan for Community**
