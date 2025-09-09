@@ -133,8 +133,12 @@ const app = new Elysia()
   .post('/api/start-preview', async ({ body }) => {
     const { projectId } = body;
     try {
-      await getOrCreatePreviewServer(projectId);
-      return { success: true, message: 'Preview server started' };
+      const preview = await getOrCreatePreviewServer(projectId);
+      if (preview) {
+        return { success: true, message: 'Preview server started', port: preview.port };
+      } else {
+        return new Response(JSON.stringify({ success: false, message: 'Failed to start preview server' }), { status: 500 });
+      }
     } catch (error) {
       console.error(`Failed to start preview for ${projectId}:`, error);
       return new Response(JSON.stringify({ success: false, message: (error as Error).message }), { status: 500 });

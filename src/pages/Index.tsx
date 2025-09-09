@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUp, Loader2, Trash2 } from "lucide-react";
+import { ArrowUp, Loader2, Trash2, Eye } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { v4 as uuidv4 } from 'uuid';
 import axios, { isAxiosError } from 'axios';
@@ -143,10 +143,36 @@ const IndexPage = () => {
                     </p>
                   </CardContent>
                   <CardFooter className="flex justify-between items-center">
-                    {/* Link to re-open the project editor */}
-                    <Link to={`/project/${project.id}`}>
-                      <Button variant="outline" size="sm">Open</Button>
-                    </Link>
+                    <div className="flex gap-2">
+                      {/* Link to re-open the project editor */}
+                      <Link to={`/project/${project.id}`}>
+                        <Button variant="outline" size="sm">Open</Button>
+                      </Link>
+                      {/* Button to preview the project */}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          // Start preview and open in new tab
+                          fetch(`http://localhost:3002/api/start-preview`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ projectId: project.id })
+                          })
+                          .then(res => res.json())
+                          .then(data => {
+                            if (data.success && data.port) {
+                              setTimeout(() => {
+                                window.open(`http://localhost:${data.port}`, '_blank');
+                              }, 2000);
+                            }
+                          })
+                          .catch(console.error);
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-1"/>Preview
+                      </Button>
+                    </div>
                     {/* Button to delete the project */}
                     <Button 
                       variant="destructive" 

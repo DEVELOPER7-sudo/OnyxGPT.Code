@@ -11,31 +11,31 @@ const InitializingPreview = () => (
 export const LivePreview = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const hasFiles = useProjectStore((state) => state.files.size > 0);
-  const [previewReady, setPreviewReady] = useState(false);
+  const [previewPort, setPreviewPort] = useState<number | null>(null);
 
   useEffect(() => {
     if (hasFiles && projectId) {
-      // Start the preview server
+      // Start the preview server and get the port
       fetch(`http://localhost:3002/api/start-preview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId })
       })
-      .then(() => {
-        // Give it a moment to start
-        setTimeout(() => setPreviewReady(true), 2000);
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.port) {
+          setTimeout(() => setPreviewPort(data.port), 2000);
+        }
       })
       .catch(console.error);
     }
   }, [hasFiles, projectId]);
 
-  if (!hasFiles || !previewReady) {
+  if (!hasFiles || !previewPort) {
     return <InitializingPreview />;
   }
 
-  // Use a simple port calculation based on project ID
-  const port = 5174;
-  const previewUrl = `http://localhost:${port}`;
+  const previewUrl = `http://localhost:${previewPort}`;
 
   return (
     <iframe
