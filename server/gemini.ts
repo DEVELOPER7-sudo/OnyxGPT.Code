@@ -15,6 +15,8 @@ export async function generateResponse(
   controller: ReadableStreamDefaultController
 ) {
   const encoder = new TextEncoder();
+  const enqueue = controller.enqueue.bind(controller);
+  const close = controller.close.bind(controller);
   
   try {
     console.log("Loading system prompt...");
@@ -32,16 +34,16 @@ export async function generateResponse(
     for await (const chunk of result.stream) {
       const chunkText = chunk.text();
       const data = `data: ${JSON.stringify({ text: chunkText })}\n\n`;
-      controller.enqueue(encoder.encode(data));
+      enqueue(encoder.encode(data));
     }
 
-    controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+    enqueue(encoder.encode(`data: [DONE]\n\n`));
 
   } catch (error) {
     console.error("Gemini error:", error);
-    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: (error as Error).message })}\n\n`));
+    enqueue(encoder.encode(`data: ${JSON.stringify({ error: (error as Error).message })}\n\n`));
   } finally {
-    controller.close();
+    close();
   }
 }
 
