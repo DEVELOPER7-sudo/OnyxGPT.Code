@@ -1,5 +1,5 @@
 import { useProjectStore } from '@/store/projectStore';
-import axios from 'axios';
+import { projectStorage } from '@/lib/projectStorage';
 
 type StoreActions = Pick<ReturnType<typeof useProjectStore['getState']>, 'addMessage' | 'addOrUpdateFile' | 'deleteFile' | 'renameFile'>;
 
@@ -143,28 +143,40 @@ export class StreamingParser {
 
   private async performDependencyInstall(packageName: string) {
     try {
-      await axios.post('http://localhost:3002/api/install-dependency', {
-        projectId: this.projectId,
-        packageName: packageName
-      });
-      console.log(`Successfully installed dependency: ${packageName}`);
-      this.actions.addMessage({ type: 'system', content: `✅ Installed ${packageName}` });
+      // Note: Dependency installation requires a backend or local build process
+      // For now, just log it in the system message
+      console.log(`Dependency requested: ${packageName}`);
+      this.actions.addMessage({ type: 'system', content: `📦 Dependency: ${packageName} (install locally with: npm install ${packageName} or bun add ${packageName})` });
     } catch (error) {
-      console.error(`Failed to install dependency: ${packageName}`, error);
-      this.actions.addMessage({ type: 'system', content: `❌ Failed to install ${packageName}` });
+      console.error(`Failed to process dependency: ${packageName}`, error);
+      this.actions.addMessage({ type: 'system', content: `❌ Failed to process ${packageName}` });
     }
   }
 
   private async performFileOperation(operation: { type: string, path?: string, content?: string, oldPath?: string, newPath?: string }) {
     try {
-      await axios.post('http://localhost:3002/api/update-file', {
-        projectId: this.projectId,
-        operation: operation
-      });
-      console.log(`Successfully sent operation: ${operation.type}`);
+      // Store file operations in localStorage
+      switch (operation.type) {
+        case 'write':
+          if (operation.path && operation.content !== undefined) {
+            projectStorage.updateProjectFile(this.projectId, operation.path, operation.content);
+          }
+          break;
+        case 'delete':
+          if (operation.path) {
+            projectStorage.deleteProjectFile(this.projectId, operation.path);
+          }
+          break;
+        case 'rename':
+          if (operation.oldPath && operation.newPath) {
+            projectStorage.renameProjectFile(this.projectId, operation.oldPath, operation.newPath);
+          }
+          break;
+      }
+      console.log(`Successfully performed operation: ${operation.type}`);
     } catch (error) {
       console.error(`Failed to perform operation: ${operation.type}`, error);
-      this.actions.addMessage({ type: 'system', content: `Error: Failed to write file ${operation.path}` });
+      this.actions.addMessage({ type: 'system', content: `Error: Failed to perform ${operation.type} operation on ${operation.path}` });
     }
   }
 }

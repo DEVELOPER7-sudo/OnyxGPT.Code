@@ -6,9 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowUp, Loader2, Trash2, Eye } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { v4 as uuidv4 } from 'uuid';
-import axios, { isAxiosError } from 'axios';
 import { useProjects, Project } from "@/hooks/useProjects";
-import { formatDistanceToNow } from 'date-fns';
+import { projectStorage } from "@/lib/projectStorage";
 
 // The Header component remains unchanged.
 const Header = () => (
@@ -34,23 +33,15 @@ const PromptInput = ({ onProjectCreate }: { onProjectCreate: () => void }) => {
     const projectId = uuidv4();
 
     try {
-      await axios.post('http://localhost:3002/api/create-project', {
-        projectId,
-        prompt,
-        model,
-      });
+      // Create project in localStorage
+      projectStorage.createProject(projectId, prompt, model);
       
       onProjectCreate(); // Refresh the projects list
       navigate(`/project/${projectId}`, { state: { prompt, model } });
 
     } catch (error) {
       console.error("Project creation failed:", error);
-      let errorMessage = 'An unknown error occurred.';
-      if (isAxiosError(error)) {
-        errorMessage = error.response?.data?.message || error.message;
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       alert(`Project Setup Failed: ${errorMessage}`);
       setIsLoading(false);
     }
@@ -153,21 +144,7 @@ const IndexPage = () => {
                         variant="outline" 
                         size="sm"
                         onClick={() => {
-                          // Start preview and open in new tab
-                          fetch(`http://localhost:3002/api/start-preview`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ projectId: project.id })
-                          })
-                          .then(res => res.json())
-                          .then(data => {
-                            if (data.success && data.port) {
-                              setTimeout(() => {
-                                window.open(`http://localhost:${data.port}`, '_blank');
-                              }, 2000);
-                            }
-                          })
-                          .catch(console.error);
+                          alert("Preview functionality requires building and serving the project locally.");
                         }}
                       >
                         <Eye className="w-4 h-4 mr-1"/>Preview

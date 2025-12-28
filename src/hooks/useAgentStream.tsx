@@ -24,7 +24,10 @@ export function useAgentStream(prompt: string | null, projectId: string | undefi
     const controller = new AbortController();
     const startStream = async () => {
       try {
-        const response = await fetch('http://localhost:3002/api/generate', {
+        // Get the API endpoint from environment or use default
+        const apiEndpoint = import.meta.env.VITE_GEMINI_API_ENDPOINT || 'http://localhost:3002/api/generate';
+        
+        const response = await fetch(apiEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt }),
