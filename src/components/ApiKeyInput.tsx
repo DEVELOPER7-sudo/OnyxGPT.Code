@@ -10,8 +10,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Settings, Key, Eye, EyeOff, Check, X } from "lucide-react";
+import { Settings, Key, Eye, EyeOff, Check, X, AlertCircle } from "lucide-react";
 import { useApiKey } from "@/hooks/useApiKey";
+import { toast } from "sonner";
 
 export function ApiKeyInput() {
   const { apiKey, setApiKey, clearApiKey, hasApiKey } = useApiKey();
@@ -20,14 +21,29 @@ export function ApiKeyInput() {
   const [open, setOpen] = useState(false);
 
   const handleSave = () => {
-    setApiKey(inputValue.trim());
+    const trimmedKey = inputValue.trim();
+    if (!trimmedKey) {
+      toast.error('Empty Key', {
+        description: 'Please enter a valid API key.',
+      });
+      return;
+    }
+    setApiKey(trimmedKey);
+    toast.success('API Key Saved', {
+      description: 'Your Gemini API key has been saved securely in your browser.',
+    });
     setOpen(false);
   };
 
   const handleClear = () => {
     clearApiKey();
     setInputValue('');
+    toast.info('API Key Cleared', {
+      description: 'Your API key has been removed.',
+    });
   };
+  
+  const isValidKey = inputValue.trim().length > 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -50,12 +66,12 @@ export function ApiKeyInput() {
             Gemini API Key
           </DialogTitle>
           <DialogDescription>
-            Enter your own Gemini API key. Get one free at{" "}
+            Enter your Gemini API key. Get one free at{" "}
             <a
               href="https://aistudio.google.com/app/apikey"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary underline"
+              className="text-primary underline hover:text-primary/80"
             >
               Google AI Studio
             </a>
@@ -73,6 +89,11 @@ export function ApiKeyInput() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 className="pr-10"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && isValidKey) {
+                    handleSave();
+                  }
+                }}
               />
               <Button
                 type="button"
@@ -85,12 +106,29 @@ export function ApiKeyInput() {
               </Button>
             </div>
           </div>
+          
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-3 flex gap-2 text-sm">
+            <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <div className="text-blue-700 dark:text-blue-300">
+              Your API key is stored <strong>only in your browser</strong> using localStorage. It is never sent to our servers.
+            </div>
+          </div>
+          
           <div className="flex gap-2">
-            <Button onClick={handleSave} disabled={!inputValue.trim()} className="flex-1">
+            <Button 
+              onClick={handleSave} 
+              disabled={!isValidKey} 
+              className="flex-1"
+            >
               Save Key
             </Button>
             {hasApiKey && (
-              <Button variant="destructive" onClick={handleClear}>
+              <Button 
+                variant="destructive" 
+                size="icon"
+                onClick={handleClear}
+                title="Clear saved API key"
+              >
                 <X className="w-4 h-4" />
               </Button>
             )}

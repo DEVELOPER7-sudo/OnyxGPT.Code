@@ -60,12 +60,19 @@ const app = new Elysia()
   .get('/', () => 'Open Lovable Server is running')
   
   .post('/api/generate', async ({ body }) => { 
-    console.log("Generate API called");
+    console.log("Generate API called with prompt:", body.prompt.substring(0, 100));
     const { prompt } = body;
     
     const stream = new ReadableStream({
-      start(controller) {
-        generateResponse(prompt, controller);
+      async start(controller) {
+        try {
+          await generateResponse(prompt, controller);
+        } catch (error) {
+          console.error("Stream error:", error);
+          const encoder = new TextEncoder();
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: (error as Error).message })}\n\n`));
+          controller.close();
+        }
       }
     });
 

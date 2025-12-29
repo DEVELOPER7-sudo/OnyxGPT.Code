@@ -21,27 +21,38 @@ export async function generateResponse(
   try {
     console.log("Loading system prompt...");
     const systemPrompt = await getSystemPrompt();
+    console.log("System prompt loaded, length:", systemPrompt.length);
     
-    console.log("Starting chat with system prompt...");
+    console.log("Creating chat session...");
     const chat = model.startChat({
-      history: [{ role: "user", parts: [{ text: systemPrompt }] }],
+      history: [],
       generationConfig: { maxOutputTokens: 8192 },
     });
 
-    console.log("Sending user prompt...");
-    const result = await chat.sendMessageStream(prompt);
+    console.log("Sending user prompt to Gemini API...");
+    const fullPrompt = systemPrompt + "\n\n" + prompt;
+    const result = await chat.sendMessageStream(fullPrompt);
     
+    console.log("Streaming response chunks...");
+    let chunkCount = 0;
     for await (const chunk of result.stream) {
       const chunkText = chunk.text();
-      const data = `data: ${JSON.stringify({ text: chunkText })}\n\n`;
-      enqueue(encoder.encode(data));
+      if (chunkText) {
+        chunkCount++;
+        console.log(`Chunk ${chunkCount}: ${chunkText.length} characters`);
+        const data = `data: ${JSON.stringify({ text: chunkText })}\n\n`;
+        enqueue(encoder.encode(data));
+      }
     }
 
+    console.log(`Stream complete. Total chunks: ${chunkCount}`);
     enqueue(encoder.encode(`data: [DONE]\n\n`));
 
   } catch (error) {
     console.error("Gemini error:", error);
-    enqueue(encoder.encode(`data: ${JSON.stringify({ error: (error as Error).message })}\n\n`));
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error details:", errorMessage);
+    enqueue(encoder.encode(`data: ${JSON.stringify({ error: errorMessage })}\n\n`));
   } finally {
     close();
   }
