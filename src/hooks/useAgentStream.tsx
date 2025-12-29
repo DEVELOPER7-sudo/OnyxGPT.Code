@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { StreamingParser } from '@/lib/parser';
 import { useProjectStore } from '@/store/projectStore';
+import { GeminiStreamClient } from '@/lib/geminiClient';
 import { toast } from 'sonner';
 
 // Get the actions once, outside the hook. They are stable.
@@ -8,6 +9,7 @@ const { addMessage, addOrUpdateFile, deleteFile, renameFile, clearState } = useP
 
 export function useAgentStream(prompt: string | null, projectId: string | undefined, model: string = 'gemini-2.0-flash') {
   const parserRef = useRef<StreamingParser | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!prompt || !projectId) {
@@ -36,90 +38,40 @@ export function useAgentStream(prompt: string | null, projectId: string | undefi
     
     parserRef.current = new StreamingParser({ addMessage, addOrUpdateFile, deleteFile, renameFile }, projectId);
 
-    const controller = new AbortController();
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     const startStream = async () => {
       try {
-        const apiEndpoint = 'http://localhost:3002/api/generate';
-        console.log('Fetching from:', apiEndpoint);
-        
-        const response = await fetch(apiEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt }),
-          signal: controller.signal,
-        });
-
-        console.log('Response status:', response.status);
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Response error:', errorText);
-          let errorMessage = response.statusText;
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData.error || response.statusText;
-            addMessage({ type: 'system', content: `❌ Error: ${errorMessage}` });
-          } catch {
-            addMessage({ type: 'system', content: `❌ Error: ${response.statusText}` });
-          }
-          toast.error('Server Error', {
-            description: errorMessage,
-            duration: 5000,
-          });
-          return;
-        }
+        console.log('Starting Gemini stream with model:', model);
         
         toast.loading('Agent responding...', {
           duration: Infinity,
         });
 
-        if (!response.body) throw new Error('Response body is null.');
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let partialLine = '';
-        console.log('Starting to read stream...');
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            console.log('Stream ended');
+        const client = new GeminiStreamClient(apiKey, model);
+        
+        for await (const chunk of client.generateStream(prompt)) {
+          if (abortController.signal.aborted) {
+            console.log('Stream aborted');
             break;
           }
-          const decodedChunk = partialLine + decoder.decode(value);
-          const lines = decodedChunk.split('\n\n');
-          partialLine = lines.pop() || '';
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const dataString = line.substring(6).trim();
-              if (dataString === '[DONE]') {
-                console.log('Received [DONE]');
-                toast.success('Agent Complete', {
-                  description: 'Response generated successfully!',
-                  duration: 3000,
-                });
-                partialLine = '';
-                return;
-              }
-              try {
-                const parsedData = JSON.parse(dataString);
-                if (parsedData.error) {
-                  console.error('API error:', parsedData.error);
-                  addMessage({ type: 'system', content: `❌ API Error: ${parsedData.error}` });
-                  toast.error('API Error', {
-                    description: parsedData.error,
-                    duration: 5000,
-                  });
-                } else if (parsedData.text) {
-                  console.log('Parsed text chunk:', parsedData.text.length, 'chars');
-                  parserRef.current?.parse(parsedData.text);
-                }
-              } catch (e) {
-                console.error("JSON parse error >> ", e, "Line:", dataString)
-              }
-            }
+          
+          if (chunk.text) {
+            console.log('Received chunk:', chunk.text.length, 'chars');
+            parserRef.current?.parse(chunk.text);
           }
         }
+
+        console.log('Stream completed');
+        toast.success('Agent Complete', {
+          description: 'Response generated successfully!',
+          duration: 3000,
+        });
+
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
-          console.error("Error fetching or processing stream:", err);
+          console.error("Error in stream:", err);
           const errorMsg = (err as Error).message;
           addMessage({ type: 'system', content: `❌ Stream error: ${errorMsg}` });
           toast.error('Stream Error', {
@@ -132,7 +84,9 @@ export function useAgentStream(prompt: string | null, projectId: string | undefi
     
     startStream();
 
-    return () => { controller.abort(); };
+    return () => { 
+      abortController.abort();
+    };
     
   }, [prompt, projectId, model]);
 }
