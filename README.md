@@ -26,15 +26,15 @@ This project is built on the belief that AI should be a collaborative partner in
 
 ## 🛠️ How It Works
 
-Open Lovable combines a frontend built with Vite and React with a backend powered by Bun and ElysiaJS.
+Open Lovable combines a frontend built with Vite and React with a local backend powered by Bun and ElysiaJS. **All data is stored locally** using browser localStorage.
 
 1.  **Prompt:** You describe what you want to build on the homepage (e.g., "a beautiful todo application").
-2.  **Project Setup:** The backend instantly scaffolds a new React + TypeScript + Tailwind project for you in a sandboxed folder.
+2.  **API Key:** Set your Gemini API key in the browser UI (stored securely in localStorage).
 3.  **AI Generation:** Your prompt, combined with a carefully crafted system prompt, is sent to the Google Gemini API.
 4.  **Live Parsing:** The AI's response, which is a stream of structured commands and code, is parsed in real-time on the frontend.
-5.  **UI Updates:** As the parser identifies commands (`<lov-write>`, `<lov-rename>`, etc.), it updates the UI to show you the agent's plan and the code being generated.
-6.  **File Operations:** Simultaneously, these commands are sent to the backend, which performs the actual file system operations—writing, renaming, and deleting files within your project's sandboxed directory.
-7.  **Live Preview:** Watch your application come to life with an integrated live preview that updates as the AI writes code.
+5.  **Local Storage:** The generated files and project data are stored in browser localStorage (5-10 MB per domain).
+6.  **UI Updates:** As the parser identifies commands (`<lov-write>`, `<lov-rename>`, etc.), it updates the UI to show you the agent's plan and the code being generated.
+7.  **Persistence:** Projects remain in localStorage until you delete them, allowing you to reopen and continue editing anytime.
 
 ## 💻 Tech Stack
 
@@ -88,11 +88,13 @@ Follow these steps to get Open Lovable running on your local machine.
 
 - **🤖 AI-Powered Development:** Describe your app and watch AI build it
 - **📱 Live Preview:** See your application update in real-time as code is generated
-- **📁 Project Management:** Dashboard to manage multiple projects
+- **📁 Project Management:** Dashboard to manage multiple projects locally
 - **🔄 Real-time Streaming:** Watch the AI agent think and code in real-time
-- **🎨 Modern UI:** Clean, responsive interface built with Tailwind CSS
-- **🔧 Multiple AI Models:** Choose from different Gemini models based on your needs
-- **💾 Persistent Projects:** All projects are saved and can be reopened anytime
+- **🎨 Modern UI:** Clean, responsive interface built with Tailwind CSS and shadcn/ui
+- **🔧 Multiple AI Models:** Choose from Gemini 2.0 Flash, 2.5 Flash, or 2.5 Pro
+- **💾 Local Storage:** All projects stored in browser localStorage, no backend database needed
+- **🔔 Toast Notifications:** Real-time feedback on every operation
+- **🔐 Privacy-First:** All data stays on your device, no cloud sync
 
 ## 🗺️ Project Roadmap
 

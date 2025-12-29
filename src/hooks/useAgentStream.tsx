@@ -39,9 +39,7 @@ export function useAgentStream(prompt: string | null, projectId: string | undefi
     const controller = new AbortController();
     const startStream = async () => {
       try {
-        // Support both local development and cloud deployment
-        const apiEndpoint = import.meta.env.VITE_API_ENDPOINT || 
-          'http://localhost:3002/api/generate';
+        const apiEndpoint = 'http://localhost:3002/api/generate';
         console.log('Fetching from:', apiEndpoint);
         
         const response = await fetch(apiEndpoint, {
