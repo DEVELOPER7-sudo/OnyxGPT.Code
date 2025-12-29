@@ -62,18 +62,19 @@ To use https://onyx-gpt-code.vercel.app:
 ## Features
 
 ### Supported
-- ✅ Generating code with Gemini AI
+- ✅ Generating code with Gemini AI (requires internet)
 - ✅ Real-time streaming responses
 - ✅ Creating and editing files
 - ✅ Managing multiple projects
 - ✅ Exporting generated code
-- ✅ Full offline read access (after first load)
+- ✅ Reading existing projects (offline)
 
 ### Limitations
 - ❌ Backend dependencies (npm/pip installs)
 - ❌ Running code/tests
 - ❌ Database operations
 - ❌ File system access (outside browser)
+- ❌ Generating code without internet
 
 ## Storage & Privacy
 

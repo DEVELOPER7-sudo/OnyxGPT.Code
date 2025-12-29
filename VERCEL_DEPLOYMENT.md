@@ -53,7 +53,7 @@ vercel --prod
 - ✅ No environment variables needed (except optional)
 - ✅ API key stored in browser localStorage
 - ✅ Data persists across page refreshes
-- ✅ Works without internet (read-only after first load)
+- ✅ Requires internet for Gemini API calls
 
 ## Domain Configuration
 
