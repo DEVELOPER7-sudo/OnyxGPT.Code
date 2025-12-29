@@ -6,16 +6,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowUp, Loader2, Trash2, Eye } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { v4 as uuidv4 } from 'uuid';
-import { useProjects, Project } from "@/hooks/useProjects";
+import { useProjects } from "@/hooks/useProjects";
 import { projectStorage } from "@/lib/projectStorage";
+import { ApiKeyInput } from "@/components/ApiKeyInput";
+import { useApiKey } from "@/hooks/useApiKey";
+import { toast } from "sonner";
 
-// The Header component remains unchanged.
 const Header = () => (
   <header className="absolute top-0 left-0 right-0 p-4">
-    <div className="container mx-auto flex justify-start items-center">
+    <div className="container mx-auto flex justify-between items-center">
       <div className="flex items-center gap-2">
         <span className="text-xl font-bold">Open Lovable</span>
       </div>
+      <ApiKeyInput />
     </div>
   </header>
 );

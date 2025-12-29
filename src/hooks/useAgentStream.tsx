@@ -1,38 +1,47 @@
 import { useEffect, useRef } from 'react';
-import { useStore } from 'zustand';
 import { StreamingParser } from '@/lib/parser';
 import { useProjectStore } from '@/store/projectStore';
 
 // Get the actions once, outside the hook. They are stable.
 const { addMessage, addOrUpdateFile, deleteFile, renameFile, clearState } = useProjectStore.getState();
 
-export function useAgentStream(prompt: string | null, projectId: string | undefined) {
+export function useAgentStream(prompt: string | null, projectId: string | undefined, model: string = 'gemini-2.0-flash') {
   const parserRef = useRef<StreamingParser | null>(null);
 
   useEffect(() => {
-    // The effect will not run if either the prompt or projectId is missing.
-    // It will automatically re-run when they become available.
     if (!prompt || !projectId) {
+      return;
+    }
+
+    // Get API key from localStorage
+    const apiKey = localStorage.getItem('gemini_api_key');
+    if (!apiKey) {
+      addMessage({ type: 'system', content: '⚠️ Please set your Gemini API key first using the "Set API Key" button above.' });
       return;
     }
 
     clearState();
     
-    // Pass the stable actions and the now-available projectId to the parser.
     parserRef.current = new StreamingParser({ addMessage, addOrUpdateFile, deleteFile, renameFile }, projectId);
 
     const controller = new AbortController();
     const startStream = async () => {
       try {
-        // Get the API endpoint from environment or use default
-        const apiEndpoint = import.meta.env.VITE_GEMINI_API_ENDPOINT || 'http://localhost:3002/api/generate';
+        const apiEndpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate`;
         
         const response = await fetch(apiEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({ prompt, model, apiKey }),
           signal: controller.signal,
         });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          addMessage({ type: 'system', content: `❌ Error: ${errorData.error || response.statusText}` });
+          return;
+        }
+
         if (!response.body) throw new Error('Response body is null.');
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -64,6 +73,7 @@ export function useAgentStream(prompt: string | null, projectId: string | undefi
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           console.error("Error fetching or processing stream:", err);
+          addMessage({ type: 'system', content: `❌ Stream error: ${(err as Error).message}` });
         }
       }
     };
@@ -72,7 +82,5 @@ export function useAgentStream(prompt: string | null, projectId: string | undefi
 
     return () => { controller.abort(); };
     
-  // The hook now correctly depends on both prompt and projectId.
-  // It will fire as soon as both are defined.
-  }, [prompt, projectId]);
+  }, [prompt, projectId, model]);
 }

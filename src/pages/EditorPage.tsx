@@ -57,17 +57,17 @@ const EditorPage = () => {
   // Get the projectId from the URL. This is reliable.
   const { projectId } = useParams();
   const location = useLocation();
-  // Get the prompt passed via in-memory state. This is less reliable (gone on refresh).
+  // Get the prompt and model passed via in-memory state.
   const initialPrompt = location.state?.prompt || null;
+  const initialModel = location.state?.model || 'gemini-2.0-flash';
 
-  // Subscribe to the state from our Zustand store. This part is correct.
+  // Subscribe to the state from our Zustand store.
   const messages = useProjectStore((state) => state.messages);
   const filesMap = useProjectStore((state) => state.files);
   const files = Array.from(filesMap.values());
 
-  // Pass BOTH the initialPrompt and the projectId to the hook.
-  // The hook will now have everything it needs to start the stream.
-  useAgentStream(initialPrompt, projectId);
+  // Pass the initialPrompt, projectId, and model to the hook.
+  useAgentStream(initialPrompt, projectId, initialModel);
 
   if (!initialPrompt) {
     return <MissingPromptNotice />;
