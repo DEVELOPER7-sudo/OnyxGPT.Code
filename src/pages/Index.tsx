@@ -3,30 +3,93 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUp, Loader2, Trash2, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowUp, Loader2, Trash2, Eye, Settings } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { v4 as uuidv4 } from 'uuid';
 import axios, { isAxiosError } from 'axios';
 import { useProjects, Project } from "@/hooks/useProjects";
+import { useSettingsStore } from "@/store/settingsStore";
 import { formatDistanceToNow } from 'date-fns';
 
-// The Header component remains unchanged.
+// Settings Dialog Component
+const SettingsDialog = () => {
+  const { modelId, sandboxApi, setModelId, setSandboxApi } = useSettingsStore();
+  const [tempModelId, setTempModelId] = useState(modelId);
+  const [tempSandboxApi, setTempSandboxApi] = useState(sandboxApi);
+  const [open, setOpen] = useState(false);
+
+  const handleSave = () => {
+    setModelId(tempModelId);
+    setSandboxApi(tempSandboxApi);
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <Settings className="w-5 h-5" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Settings</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="model-id">Custom Model ID</Label>
+            <Input
+              id="model-id"
+              placeholder="e.g., gpt-4o, claude-3-opus"
+              value={tempModelId}
+              onChange={(e) => setTempModelId(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sandbox-api">Sandbox API Endpoint</Label>
+            <Input
+              id="sandbox-api"
+              placeholder="e.g., https://api.puter.com/ai/text/generate"
+              value={tempSandboxApi}
+              onChange={(e) => setTempSandboxApi(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Use Puter AI API or any OpenAI-compatible endpoint
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>Save Settings</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// The Header component
 const Header = () => (
   <header className="absolute top-0 left-0 right-0 p-4">
-    <div className="container mx-auto flex justify-start items-center">
+    <div className="container mx-auto flex justify-between items-center">
       <div className="flex items-center gap-2">
-        <span className="text-xl font-bold">Open Lovable</span>
+        <span className="text-xl font-bold">OnyxGPT.Code</span>
       </div>
+      <SettingsDialog />
     </div>
   </header>
 );
 
-// The PromptInput component is updated to refresh projects after creation.
+// The PromptInput component
 const PromptInput = ({ onProjectCreate }: { onProjectCreate: () => void }) => {
   const [prompt, setPrompt] = useState('');
-  const [model, setModel] = useState('gemini-2.0-flash');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { modelId, sandboxApi } = useSettingsStore();
 
   const handleSubmit = async () => {
     if (!prompt.trim() || isLoading) return;
@@ -37,11 +100,11 @@ const PromptInput = ({ onProjectCreate }: { onProjectCreate: () => void }) => {
       await axios.post('http://localhost:3002/api/create-project', {
         projectId,
         prompt,
-        model,
+        modelId,
       });
       
       onProjectCreate(); // Refresh the projects list
-      navigate(`/project/${projectId}`, { state: { prompt, model } });
+      navigate(`/project/${projectId}`, { state: { prompt, modelId, sandboxApi } });
 
     } catch (error) {
       console.error("Project creation failed:", error);
@@ -67,25 +130,7 @@ const PromptInput = ({ onProjectCreate }: { onProjectCreate: () => void }) => {
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
         />
-        <div className="flex items-center justify-between mt-3">
-          <Select value={model} onValueChange={setModel}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="gemini-2.0-flash">
-                <div className="flex items-center gap-2">
-                  Gemini 2.0 Flash
-                </div>
-              </SelectItem>
-              <SelectItem value="gemini-2.5-flash">
-                <div className="flex items-center gap-2">
-                  Gemini 2.5 Flash
-                </div>
-              </SelectItem>
-              <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex items-center justify-end mt-3">
           <Button size="icon" className="w-9 h-9" onClick={handleSubmit} disabled={isLoading}>
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowUp className="w-5 h-5" />}
           </Button>
@@ -108,9 +153,9 @@ const IndexPage = () => {
       <main className="flex-grow flex flex-col items-center text-center w-full pt-20">
         <h1 className="text-5xl md-text-7xl font-bold tracking-tight mb-6 text-center">
           <div className="mt-2">
-            Build something{' '}
+            Build with{' '}
             <span className="bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent">
-              OpenLovable
+              OnyxGPT.Code
             </span>
           </div>
         </h1>

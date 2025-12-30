@@ -78,7 +78,7 @@ const EditorPage = () => {
       <header className="p-3 border-b flex justify-between items-center bg-background shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 bg-gradient-to-br from-primary to-secondary rounded-md"></div>
-          <span className="font-semibold">OpenLovable / {projectId}</span>
+          <span className="font-semibold">OnyxGPT.Code / {projectId}</span>
         </div>
       </header>
 

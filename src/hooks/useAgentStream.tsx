@@ -2,12 +2,14 @@ import { useEffect, useRef } from 'react';
 import { useStore } from 'zustand';
 import { StreamingParser } from '@/lib/parser';
 import { useProjectStore } from '@/store/projectStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 // Get the actions once, outside the hook. They are stable.
 const { addMessage, addOrUpdateFile, deleteFile, renameFile, clearState } = useProjectStore.getState();
 
 export function useAgentStream(prompt: string | null, projectId: string | undefined) {
   const parserRef = useRef<StreamingParser | null>(null);
+  const { modelId, sandboxApi } = useSettingsStore();
 
   useEffect(() => {
     // The effect will not run if either the prompt or projectId is missing.
@@ -27,7 +29,7 @@ export function useAgentStream(prompt: string | null, projectId: string | undefi
         const response = await fetch('http://localhost:3002/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({ prompt, modelId, sandboxApi }),
           signal: controller.signal,
         });
         if (!response.body) throw new Error('Response body is null.');
@@ -69,7 +71,7 @@ export function useAgentStream(prompt: string | null, projectId: string | undefi
 
     return () => { controller.abort(); };
     
-  // The hook now correctly depends on both prompt and projectId.
+  // The hook now correctly depends on prompt, projectId, modelId and sandboxApi.
   // It will fire as soon as both are defined.
-  }, [prompt, projectId]);
+  }, [prompt, projectId, modelId, sandboxApi]);
 }
