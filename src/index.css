@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 3.6%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+    --muted: 0 0% 40%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 262 80% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 262 80% 50%;
+    --primary: 262 80% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 100%;
+    --radius: 0.5rem;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.6%;
+    --card: 0 0% 96%;
+    --card-foreground: 0 0% 3.6%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.6%;
+    --muted: 0 0% 60%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 262 80% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 262 80% 50%;
+    --primary: 262 80% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 3.6%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  .cm-editor {
+    @apply h-full;
+  }
+
+  /* CodeMirror dark mode */
+  .dark .cm-editor {
+    @apply bg-card text-foreground;
+  }
+
+  .dark .cm-gutters {
+    @apply bg-background border-border;
+  }
+
+  .dark .cm-activeLineGutter {
+    @apply bg-card;
+  }
+
+  .dark .cm-cursor {
+    border-left-color: theme('colors.accent.DEFAULT');
+  }
+
+  /* CodeMirror light mode */
+  .light .cm-editor {
+    @apply bg-white text-foreground;
+  }
+
+  .light .cm-gutters {
+    @apply bg-gray-50 border-border;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-background/80 backdrop-blur-lg border border-border;
+  }
+
+  .smooth-transition {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .focus-ring {
+    @apply ring-2 ring-offset-2 ring-offset-background ring-accent;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
