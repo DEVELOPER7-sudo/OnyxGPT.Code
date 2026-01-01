@@ -9,8 +9,8 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "typescript": "^5.3.3",
     "@uiw/react-codemirror": "^4.21.25",
     "@codemirror/lang-javascript": "^6.2.2",
