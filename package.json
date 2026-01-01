@@ -14,7 +14,6 @@
     "typescript": "^5.3.3",
     "@uiw/react-codemirror": "^4.21.25",
     "@codemirror/lang-javascript": "^6.2.2",
-    "@codemirror/lang-typescript": "^6.1.1",
     "react-resizable-panels": "^2.1.4",
     "zustand": "^4.4.1",
     "lucide-react": "^0.408.0",

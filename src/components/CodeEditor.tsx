@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { javascript } from '@codemirror/lang-javascript'
-import { typescript } from '@codemirror/lang-typescript'
 import { autocompletion } from '@codemirror/autocomplete'
 import { X, ChevronUp } from 'lucide-react'
 import { Button } from './Button'
@@ -38,7 +37,7 @@ export function CodeEditor({ isOpen, onClose }: CodeEditorProps) {
 
   const getLanguageExt = (path: string) => {
     if (path.endsWith('.ts') || path.endsWith('.tsx')) {
-      return typescript()
+      return javascript({ typescript: true })
     }
     if (path.endsWith('.js') || path.endsWith('.jsx')) {
       return javascript()
