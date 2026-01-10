@@ -1,144 +1,341 @@
-# 🚀 Open Lovable
+# OnyxGPT.Code - AI-Powered Full-Stack Code Generation
 
-**Build something lovable, just by talking to it.**
+A modern, full-featured web application for generating code, managing projects, and previewing applications in real-time using AI and sandboxed execution.
 
-Open Lovable is an open-source, AI-driven web application builder. It's a "no-code" tool with a conversational interface, allowing you to describe the application you want to build, and watch as an AI agent writes the code, sets up the files, and brings your vision to life in real time.
+## Features
 
-## 📸 Demo Screenshots
+### 🚀 Core Features
+- **AI Code Generation**: Generate full-stack TypeScript/React applications from natural language descriptions
+- **Real-time Live Preview**: Execute and preview generated code instantly in E2B sandboxes
+- **Project Management**: Auto-saving projects with cloud persistence via Puter.js
+- **File Tree Navigation**: Explore and manage project file structure
+- **Sandbox Terminal**: Execute bash commands directly in the sandbox environment
+- **Multiple AI Models**: Support for GPT, Claude, Gemini, Llama via Puter.js AI platform
 
-### Dashboard
-![Dashboard](public/assets/dashboard.png)
+### 💾 Project & Persistence
+- **Real-time Auto-save**: Projects auto-save every 1.5s with debounce
+- **Cloud Storage**: Projects saved to Puter.js KV storage or localStorage fallback
+- **Recent Projects**: Quick access to recent projects from landing page
+- **Project Sidebar**: Browse, search, and open all projects
 
-### AI Agent in Action
-![Editor](public/assets/editor.png)
+### 🎨 User Interface
+- **Two-Column Layout**: Chat on the left, code/preview on the right
+- **Responsive Design**: Works perfectly at 80%, 100%, 120% zoom levels
+- **Dark Mode**: Beautiful dark theme with cyan accents
+- **Smooth Animations**: Framer Motion animations throughout
+- **Mobile Friendly**: Full responsive design for mobile, tablet, desktop
 
-### Live Preview
-![Live Preview](public/assets/live-preview.png)
+### 🔧 Developer Experience
+- **TypeScript**: Fully typed codebase
+- **Hot Module Replacement**: Fast development with Vite
+- **Component Library**: shadcn/ui components for consistency
+- **System Prompt Engineering**: Optimized prompts for code generation
 
-### Generated Website Example
-![Website Demo](public/assets/website-demo-1.png)
-
-## ✨ Vision
-
-The goal of Open Lovable is to dramatically accelerate the software development process. Instead of manually writing boilerplate, setting up components, and wrestling with CSS, you can act as the architect. You provide the high-level vision through prompts, and the Lovable Agent acts as your expert full-stack developer, handling the implementation details.
-
-This project is built on the belief that AI should be a collaborative partner in creation, making development more accessible, faster, and more fun.
-
-## 🛠️ How It Works
-
-Open Lovable combines a frontend built with Vite and React with a local backend powered by Bun and ElysiaJS. **All data is stored locally** using browser localStorage.
-
-1.  **Prompt:** You describe what you want to build on the homepage (e.g., "a beautiful todo application").
-2.  **API Key:** Set your Gemini API key in the browser UI (stored securely in localStorage).
-3.  **AI Generation:** Your prompt, combined with a carefully crafted system prompt, is sent to the Google Gemini API.
-4.  **Live Parsing:** The AI's response, which is a stream of structured commands and code, is parsed in real-time on the frontend.
-5.  **Local Storage:** The generated files and project data are stored in browser localStorage (5-10 MB per domain).
-6.  **UI Updates:** As the parser identifies commands (`<lov-write>`, `<lov-rename>`, etc.), it updates the UI to show you the agent's plan and the code being generated.
-7.  **Persistence:** Projects remain in localStorage until you delete them, allowing you to reopen and continue editing anytime.
-
-## 💻 Tech Stack
-
--   **Frontend:** React, TypeScript, Vite, Tailwind CSS
--   **UI Components:** [shadcn/ui](https://ui.shadcn.com/)
--   **Backend:** Bun, [ElysiaJS](https://elysiajs.com/)
--   **AI:** Google Gemini API (supports multiple models: `gemini-2.0-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`)
--   **State Management:** Zustand
--   **API Communication:** Axios, Native Web Streams API
-
-## 🚀 Getting Started
-
-Follow these steps to get Open Lovable running on your local machine.
+## Quick Start
 
 ### Prerequisites
+- Node.js (v16 or higher)
+- npm or bun package manager
+- Puter.js account (for AI and cloud features)
+- E2B API key (for sandbox features - optional but recommended)
 
--   [Bun](https://bun.sh/) installed on your system.
--   A Google Gemini API Key. You can get one from the [Google AI Studio](https://aistudio.google.com/app/apikey).
--   Billing enabled on your Google Cloud project associated with the API key.
+### Installation
 
-### Installation & Setup
+```bash
+# Clone the repository
+git clone https://github.com/DEVELOPER7-sudo/code-canvas.git
+cd code-canvas
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/openlovable.git
-    cd openlovable
-    ```
+# Install dependencies
+npm install
 
-2.  **Install dependencies:**
-    ```bash
-    bun install
-    ```
+# Start development server
+npm run dev
 
-3.  **Set up your environment variables:**
-    -   Create a new file named `.env` in the root of the project.
-    -   Add your Gemini API key to this file:
-        ```
-        GEMINI_API_KEY="your_google_api_key_here"
-        ```
+# Open browser to http://localhost:5173
+```
 
-4.  **Run the application:**
-    -   This single command starts both the frontend Vite server and the backend ElysiaJS server concurrently.
-    ```bash
-    bun run dev
-    ```
+### Build for Production
 
-5.  **Open your browser:**
-    -   Navigate to `http://localhost:8080` (or whatever port Vite announces). You should see the Open Lovable homepage.
+```bash
+npm run build
+npm run preview
+```
 
-## ✨ Features
+## Configuration
 
-- **🤖 AI-Powered Development:** Describe your app and watch AI build it
-- **📱 Live Preview:** See your application update in real-time as code is generated
-- **📁 Project Management:** Dashboard to manage multiple projects locally
-- **🔄 Real-time Streaming:** Watch the AI agent think and code in real-time
-- **🎨 Modern UI:** Clean, responsive interface built with Tailwind CSS and shadcn/ui
-- **🔧 Multiple AI Models:** Choose from Gemini 2.0 Flash, 2.5 Flash, or 2.5 Pro
-- **💾 Local Storage:** All projects stored in browser localStorage, no backend database needed
-- **🔔 Toast Notifications:** Real-time feedback on every operation
-- **🔐 Privacy-First:** All data stays on your device, no cloud sync
+### E2B Sandbox (Required for Live Preview & Terminal)
 
-## 🗺️ Project Roadmap
+1. Get API key from [e2b.dev](https://e2b.dev)
+2. Open Settings (⚙️ icon) in the app
+3. Paste your E2B API key in "Sandbox API Key" field
+4. Save settings
 
-Open Lovable is actively being developed. Here are some of the features and improvements planned:
+### AI Model Selection
 
--   [x] **Live Preview:** An `<iframe>` panel that shows a real-time, sandboxed preview of the generated application as the code is written.
--   [ ] **Interactive Editing:** Allow users to click on elements in the preview to inspect and modify their properties.
--   [ ] **Follow-up Prompts:** Implement a chat interface to allow for iterative development ("Now, change the color of the primary button to blue").
--   [x] **Dependency Management:** Handle `<lov-add-dependency>` commands to automatically install new packages with `bun add`.
--   [ ] **Deployment:** A one-click button to deploy the generated project to a hosting provider like Vercel or Netlify.
--   [x] **Model Flexibility:** Allow users to choose between different AI models.
--   [ ] **Export Projects:** Download generated projects as ZIP files
--   [ ] **Template Library:** Pre-built templates for common application types
+Settings dialog allows you to:
+- Select from preset models (GPT-4o, Claude, Gemini, etc.)
+- Enter custom model IDs
+- Adjust temperature (0 = precise, 2 = creative)
+- Enable/disable auto preview
 
-## 🤝 Contributing
+## Architecture
 
-We welcome contributions! Whether you want to:
+### Project Structure
 
-- 🐛 Report bugs
-- 💡 Suggest new features  
-- 📝 Improve documentation
-- 🔧 Submit code changes
+```
+src/
+├── components/
+│   ├── FileTree.tsx              # File tree navigation
+│   ├── LivePreview.tsx           # E2B sandbox preview iframe
+│   ├── SandboxTerminal.tsx       # Terminal interface
+│   ├── ChatMessage.tsx           # Chat message display
+│   ├── CodeEditor.tsx            # Code editor view
+│   ├── SettingsDialog.tsx        # Settings panel
+│   ├── ProjectsSidebar.tsx       # Projects list
+│   ├── PromptInput.tsx           # AI prompt input
+│   └── ... (other components)
+├── pages/
+│   ├── Project.tsx               # Main project workspace (2-column layout)
+│   ├── Index.tsx                 # Landing page with recent projects
+│   └── NotFound.tsx              # 404 page
+├── hooks/
+│   ├── usePuter.ts               # Puter.js integration
+│   ├── useAutoSave.ts            # Auto-save with debounce
+│   └── use-mobile.tsx            # Mobile detection
+├── services/
+│   ├── e2bService.ts             # E2B SDK wrapper
+│   └── ... (other services)
+├── stores/
+│   └── appStore.ts               # Zustand global state
+├── types/
+│   └── project.ts                # TypeScript interfaces
+├── lib/
+│   ├── systemPrompt.ts           # AI system prompt
+│   └── utils.ts                  # Utility functions
+└── index.css                     # Global styles with Tailwind
+```
 
-Please feel free to open an issue or submit a pull request.
+### Key Technologies
 
-### Development Setup
+- **Frontend Framework**: React 18 with TypeScript
+- **Build Tool**: Vite 5
+- **Styling**: Tailwind CSS 3 + shadcn/ui
+- **State Management**: Zustand
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **Code Editing**: CodeMirror 6
+- **Markdown**: React Markdown
+- **AI/Cloud**: Puter.js
+- **Sandboxing**: E2B SDK
+
+## Usage
+
+### Creating a New Project
+
+1. Click the prompt input on the landing page
+2. Describe what you want to build (e.g., "A todo list with dark mode")
+3. Press Enter or click the send button
+4. AI generates code and displays it in the editor
+5. Live preview updates automatically (if E2B key is configured)
+
+### Managing Files
+
+- **File Tree**: Left sidebar shows all generated files
+- **Search**: Use search box to find files quickly
+- **Click to Open**: Click any file to view/edit in code editor
+
+### Running Code
+
+1. Open Settings and add E2B API key
+2. Go to project and click "Run" button
+3. Terminal tab opens showing execution output
+4. Preview tab shows live app in iframe
+
+### Project Persistence
+
+- Projects auto-save every 1.5s
+- Changes persist to Puter.js cloud or localStorage
+- All projects visible in projects sidebar
+- Recent projects shown on landing page
+
+## Component Details
+
+### Project Page Layout
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Header: Back | Logo | Project Name | Settings Run │
+├────────────────────┬────────────────────────────────┤
+│                    │                                 │
+│  Left Panel:       │  Right Panel:                  │
+│  ┌──────────────┐  │  ┌──────────────────────────┐  │
+│  │ File Tree    │  │  │ Preview | Code Tabs      │  │
+│  │ (Collapsible)│  │  ├──────────────────────────┤  │
+│  └──────────────┘  │  │ Live Preview / Editor    │  │
+│  ┌──────────────┐  │  │                          │  │
+│  │              │  │  │                          │  │
+│  │ Chat History │  │  │                          │  │
+│  │              │  │  └──────────────────────────┘  │
+│  └──────────────┘  │  ┌──────────────────────────┐  │
+│  ┌──────────────┐  │  │ Terminal | File Tree     │  │
+│  │ Chat Input   │  │  │ (Minimizable Panels)     │  │
+│  └──────────────┘  │  └──────────────────────────┘  │
+└────────────────────┴────────────────────────────────┘
+```
+
+### File Tree Component
+
+- Hierarchical folder/file display
+- Collapsible directories
+- Search functionality
+- Click to open file in editor
+- Shows file type icons
+
+### Live Preview Component
+
+- Displays E2B sandbox app in iframe
+- Auto-refresh button
+- Loading state indicator
+- Error message display
+- Server health check
+
+### Sandbox Terminal Component
+
+- Command line interface
+- Command history display
+- Output scrolling
+- Error highlighting
+- Real-time execution
+
+## System Prompt Engineering
+
+The AI uses an optimized system prompt (`src/lib/systemPrompt.ts`) that:
+- Enforces markdown code block format
+- Specifies file structure requirements
+- Ensures responsive + dark mode
+- Uses modern React patterns
+- Applies TypeScript best practices
+- Falls back to non-streaming for compatibility
+
+## Auto-Save Implementation
+
+The `useAutoSave` hook provides:
+- Debounced saving (1.5s default)
+- Change detection
+- Automatic save on unmount
+- Fallback to localStorage if cloud unavailable
+
+## Responsive Design
+
+### Zoom Support
+
+The CSS includes utilities for handling different zoom levels:
+- `flex-safe`: Adds `min-width: 0` and `min-height: 0`
+- `overflow-safe`: Ensures proper overflow handling
+- Responsive padding using `sm:` breakpoints
+- Clamp font sizes for better scaling
+
+### Breakpoints
+
+- Mobile: < 768px
+- Tablet: 768px - 1024px
+- Desktop: > 1024px
+- Zoom levels: 80% - 120%+ supported
+
+## Error Handling
+
+- **AI Streaming Fallback**: If streaming fails, automatically falls back to non-streaming
+- **Sandbox Errors**: Clear error messages if E2B sandbox fails
+- **Save Errors**: Graceful fallback to localStorage
+- **File Errors**: User-friendly error notifications
+
+## Performance Optimizations
+
+- Debounced auto-save to reduce API calls
+- Lazy component loading with React.lazy
+- CSS-in-JS optimizations via Tailwind
+- Efficient state management with Zustand
+- Code splitting ready via Vite
+
+## Browser Support
+
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+- Mobile browsers (iOS Safari, Chrome Mobile)
+
+## Security
+
+- No sensitive data stored in frontend
+- All cloud operations through Puter.js secure API
+- Sandbox execution isolated via E2B
+- HTTPS required for production
+- CORS properly configured
+
+## Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and test them
-4. Commit your changes: `git commit -m 'Add amazing feature'`
-5. Push to the branch: `git push origin feature/amazing-feature`
-6. Open a Pull Request
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
-## 📄 License
+## License
 
-This project is open-source and licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+MIT License - see LICENSE file for details
 
-## 🙏 Acknowledgments
+## Support
 
-- Built with [Google Gemini AI](https://ai.google.dev/)
-- UI components from [shadcn/ui](https://ui.shadcn.com/)
-- Powered by [Bun](https://bun.sh/) and [Vite](https://vitejs.dev/)
+- **Issues**: GitHub Issues
+- **Puter.js Docs**: https://docs.puter.com
+- **E2B Docs**: https://docs.e2b.dev
+- **React Docs**: https://react.dev
+- **Tailwind Docs**: https://tailwindcss.com
 
----
+## Roadmap
 
-**Made with ❤️ by AniketDandgavhan for Community**
+- [ ] Backend code generation and API scaffolding
+- [ ] Database schema generation and migrations
+- [ ] Git integration for version control
+- [ ] Team collaboration features
+- [ ] Custom deployment targets
+- [ ] Code review and suggestions
+- [ ] Integration with GitHub/GitLab
+- [ ] VSCode extension
+
+## Changelog
+
+### v1.0.0 (Latest)
+
+**Features Added:**
+- E2B sandbox integration with terminal support
+- Real-time project auto-saving with debounce
+- Two-column layout (chat + code/preview)
+- File tree component with search
+- Live preview iframe
+- Sandbox terminal for bash commands
+- Recent projects on landing page
+- Zoom-aware responsive design
+- System prompt optimization for all models
+
+**Bug Fixes:**
+- Fixed AI response for models without tool_use support
+- Fixed zoom responsiveness at all levels (80%, 100%, 120%+)
+- Fixed message container overflow
+- Improved streaming fallback reliability
+
+**UI/UX Improvements:**
+- Better mobile responsiveness
+- Enhanced error messages
+- Smooth animations throughout
+- Better visual hierarchy
+
+## Credits
+
+Built with ❤️ using:
+- [Puter.js](https://puter.com) - Cloud OS for code
+- [E2B](https://e2b.dev) - Sandbox execution
+- [shadcn/ui](https://shadcn-ui.com) - Component library
+- [Tailwind CSS](https://tailwindcss.com) - Utility-first CSS
+- [Framer Motion](https://www.framer.com/motion) - Animation library

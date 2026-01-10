@@ -1,183 +1,183 @@
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { Zap, Code2, Layers, Cpu, Rocket, Shield, Settings, FolderOpen, Clock, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { PromptInput } from "@/components/PromptInput";
+import { Logo } from "@/components/Logo";
+import { FeatureCard } from "@/components/FeatureCard";
+import { SettingsDialog } from "@/components/SettingsDialog";
+import { AuthButton } from "@/components/AuthButton";
+import { ProjectsSidebar } from "@/components/ProjectsSidebar";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUp, Loader2, Trash2, Eye } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
-import { v4 as uuidv4 } from 'uuid';
-import { useProjects } from "@/hooks/useProjects";
-import { projectStorage } from "@/lib/projectStorage";
-import { ApiKeyInput } from "@/components/ApiKeyInput";
-import { useApiKey } from "@/hooks/useApiKey";
-import { toast } from "sonner";
+import { useAppStore } from "@/stores/appStore";
+import { usePuter } from "@/hooks/usePuter";
 
-const Header = () => (
-  <header className="absolute top-0 left-0 right-0 p-4">
-    <div className="container mx-auto flex justify-between items-center">
-      <div className="flex items-center gap-2">
-        <span className="text-xl font-bold">Open Lovable</span>
-      </div>
-      <ApiKeyInput />
-    </div>
-  </header>
-);
+const features = [
+  { icon: Zap, title: "Lightning Fast", description: "See your ideas come to life in seconds with real-time AI code generation." },
+  { icon: Code2, title: "Production Ready", description: "Generate clean, typed TypeScript code with modern React patterns." },
+  { icon: Layers, title: "Full Stack", description: "From UI components to backend logic, build complete applications." },
+  { icon: Cpu, title: "AI Powered", description: "Powered by 500+ AI models via Puter.js - GPT, Claude, Gemini & more." },
+  { icon: Rocket, title: "Cloud Storage", description: "Projects auto-save to cloud. Access them anywhere, anytime." },
+  { icon: Shield, title: "Secure by Default", description: "Your code and data are protected with enterprise-grade security." },
+];
 
-// The PromptInput component is updated to refresh projects after creation.
-const PromptInput = ({ onProjectCreate }: { onProjectCreate: () => void }) => {
-  const [prompt, setPrompt] = useState('');
-  const [model, setModel] = useState('gemini-2.0-flash');
-  const [isLoading, setIsLoading] = useState(false);
+const Index = () => {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isPuterAvailable, projects } = useAppStore();
+  const { initAuth, loadProjects } = usePuter();
   const navigate = useNavigate();
 
-  const handleSubmit = async () => {
-    if (!prompt.trim() || isLoading) return;
-    setIsLoading(true);
-    const projectId = uuidv4();
-
-    try {
-      // Create project in localStorage
-      projectStorage.createProject(projectId, prompt, model);
+  useEffect(() => {
+    const init = async () => {
+      console.log('🚀 Initializing Index page...');
+      try {
+        const user = await initAuth();
+        console.log('✅ Auth initialized:', user ? user.username : 'anonymous');
+      } catch (error) {
+        console.error('❌ Auth init error:', error);
+      }
       
-      onProjectCreate(); // Refresh the projects list
-      navigate(`/project/${projectId}`, { state: { prompt, model } });
+      try {
+        const loaded = await loadProjects();
+        console.log('✅ Projects loaded:', loaded?.length || 0);
+        if (!loaded || loaded.length === 0) {
+          console.log('📝 No projects found. User can create new projects.');
+        }
+      } catch (error) {
+        console.error('❌ Projects load error:', error);
+      }
+    };
+    
+    init();
+  }, [initAuth, loadProjects]);
 
-    } catch (error) {
-      console.error("Project creation failed:", error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-      alert(`Project Setup Failed: ${errorMessage}`);
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div className="relative rounded-2xl bg-secondary/50 backdrop-blur-md border border-border/30 p-4 shadow-2xl">
-        <Textarea
-          placeholder="Describe the application you want to build..."
-          className="w-full bg-transparent border-none text-md resize-none p-0 pr-12"
-          rows={1}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-        />
-        <div className="flex items-center justify-between mt-3">
-          <Select value={model} onValueChange={setModel}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="gemini-2.0-flash">
-                <div className="flex items-center gap-2">
-                  Gemini 2.0 Flash
-                </div>
-              </SelectItem>
-              <SelectItem value="gemini-2.5-flash">
-                <div className="flex items-center gap-2">
-                  Gemini 2.5 Flash
-                </div>
-              </SelectItem>
-              <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button size="icon" className="w-9 h-9" onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowUp className="w-5 h-5" />}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const IndexPage = () => {
-  // Use our custom hook to get the list of projects and the functions to manage them.
-  const { projects, loading, deleteProject, refreshProjects } = useProjects();
+  const recentProjects = projects.slice(0, 6);
   
-  // Sort projects to display the most recently created ones first.
-  const sortedProjects = projects.sort((a, b) => a.id.localeCompare(b.id));
+  useEffect(() => {
+    if (recentProjects.length > 0) {
+      console.log('📂 Recent projects:', recentProjects.map(p => p.name));
+    }
+  }, [recentProjects]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center w-full px-4 relative overflow-hidden">
-      <Header />
-      <main className="flex-grow flex flex-col items-center text-center w-full pt-20">
-        <h1 className="text-5xl md-text-7xl font-bold tracking-tight mb-6 text-center">
-          <div className="mt-2">
-            Build something{' '}
-            <span className="bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent">
-              OpenLovable
-            </span>
-          </div>
-        </h1>
-        <p className="text-lg md-text-xl text-muted-foreground mb-12 max-w-2xl">
-          Create applications and websites by describing them to an AI agent.
-        </p>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <AnimatedBackground />
+      <ProjectsSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
+      <motion.header 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative z-10 flex items-center justify-between px-6 py-4 lg:px-12"
+      >
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
+            <FolderOpen className="w-5 h-5" />
+          </Button>
+          <Logo size="md" />
+        </div>
         
-        {/* Pass the `refreshProjects` function to the PromptInput component. */}
-        <PromptInput onProjectCreate={refreshProjects} />
-        
-        <div className="mt-24 w-full max-w-4xl">
-          <h2 className="text-2xl font-semibold mb-4 text-left">My Projects</h2>
-          {loading ? (
-            <div className="p-8 text-center">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-              <p className="text-muted-foreground">Loading projects...</p>
-            </div>
-          ) : sortedProjects.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {sortedProjects.map((project) => (
-                <Card key={project.id} className="text-left flex flex-col">
-                  <CardHeader>
-                    <CardTitle className="truncate text-lg" title={project.id}>
-                      Project {project.id.slice(0, 8)}...
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p className="text-sm text-muted-foreground">
-                      Project ID: {project.id}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="flex justify-between items-center">
-                    <div className="flex gap-2">
-                      {/* Link to re-open the project editor */}
-                      <Link to={`/project/${project.id}`}>
-                        <Button variant="outline" size="sm">Open</Button>
-                      </Link>
-                      {/* Button to preview the project */}
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          alert("Preview functionality requires building and serving the project locally.");
-                        }}
-                      >
-                        <Eye className="w-4 h-4 mr-1"/>Preview
-                      </Button>
-                    </div>
-                    {/* Button to delete the project */}
-                    <Button 
-                      variant="destructive" 
-                      size="icon"
-                      className="w-8 h-8"
-                      onClick={() => deleteProject(project.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 text-center border-2 border-dashed rounded-lg">
-              <p className="text-muted-foreground">Your created projects will appear here.</p>
-            </div>
+        <div className="flex items-center gap-2">
+          {!isPuterAvailable && (
+            <span className="text-xs text-yellow-500 hidden sm:block">Puter offline</span>
           )}
+          <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
+            <Settings className="w-5 h-5" />
+          </Button>
+          <AuthButton />
+        </div>
+      </motion.header>
+
+      <main className="relative z-10 flex flex-col items-center justify-center px-6 pt-20 pb-32 lg:pt-32">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card text-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </span>
+            <span className="text-muted-foreground">Powered by Puter.js AI</span>
+          </div>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-center mb-8 max-w-4xl">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+            <span className="text-foreground">Build apps with </span>
+            <span className="gradient-text glow-text">natural language</span>
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+            Describe your vision, and watch it transform into a fully functional application. Powered by 500+ AI models.
+          </p>
+        </motion.div>
+
+        <div className="w-full max-w-3xl mb-16">
+          <PromptInput />
         </div>
       </main>
-      <footer className="w-full py-8 text-center">
-        <p className="text-muted-foreground text-sm">Open Source · MIT License</p>
+
+      {/* Recent Projects Section */}
+      {recentProjects.length > 0 && (
+        <section className="relative z-10 px-6 py-16 lg:px-12 border-t border-border/30">
+          <div className="max-w-6xl mx-auto">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-8">
+              <h2 className="text-2xl font-bold mb-2">Recent Projects</h2>
+              <p className="text-muted-foreground text-sm">Continue working on your recent projects</p>
+            </motion.div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recentProjects.map((project, index) => (
+                <motion.button
+                  key={project.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.1 * index }}
+                  onClick={() => navigate(`/project/${project.id}`)}
+                  className="text-left p-5 rounded-xl glass-card border border-border/50 hover:border-border hover:bg-secondary/30 transition-all duration-200 group"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold truncate group-hover:text-primary transition-colors">{project.name}</h3>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                        <Clock className="w-3 h-3" />
+                        {new Date(project.updatedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                  </div>
+                  {project.messages.length > 0 && (
+                    <p className="text-sm text-muted-foreground/70 line-clamp-2">
+                      {project.messages[project.messages.length - 1]?.content.slice(0, 100)}
+                    </p>
+                  )}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section id="features" className="relative z-10 px-6 pb-32 lg:px-12">
+        <div className="max-w-6xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything you need to <span className="gradient-text">ship fast</span></h2>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature, index) => (
+              <FeatureCard key={feature.title} icon={feature.icon} title={feature.title} description={feature.description} delay={0.1 * index} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <footer className="relative z-10 border-t border-border/50 px-6 py-8 lg:px-12">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <Logo size="sm" />
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} OnyxGPT.Code</p>
+        </div>
       </footer>
     </div>
   );
 };
 
-export default IndexPage;
+export default Index;
