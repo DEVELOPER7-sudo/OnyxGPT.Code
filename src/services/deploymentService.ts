@@ -1,10 +1,11 @@
 /**
  * Deployment Service
  * Handles project deployment detection, validation, and execution
- * Fixes deployment issues for Node.js, Python, Go, and other languages
+ * Uses CodeSandbox SDK for development and Puter for production deployment
  */
 
 import type { FileNode, Project } from '@/types/project';
+import { codesandboxPreviewService } from './codesandboxPreviewService';
 
 export type Language = 'nodejs' | 'python' | 'go' | 'rust' | 'static' | 'unknown';
 
@@ -297,4 +298,74 @@ export function formatDeploymentError(error: unknown): string {
     }
   }
   return String(error);
+}
+
+/**
+ * Enhanced deployment with CodeSandbox integration
+ */
+export interface EnhancedDeploymentConfig extends DeploymentConfig {
+  useCodeSandbox: boolean;
+  previewUrl?: string;
+  sandboxId?: string;
+}
+
+/**
+ * Get enhanced deployment configuration with CodeSandbox support
+ */
+export function getEnhancedDeploymentConfig(project: Project): EnhancedDeploymentConfig {
+  const baseConfig = getDeploymentConfig(project);
+  
+  return {
+    ...baseConfig,
+    useCodeSandbox: true,
+    previewUrl: undefined,
+    sandboxId: undefined,
+  };
+}
+
+/**
+ * Start development server with CodeSandbox
+ */
+export async function startCodeSandboxDevServer(
+  project: Project,
+  config?: { port?: number }
+): Promise<{ success: boolean; previewUrl?: string; error?: string }> {
+  try {
+    const session = await codesandboxPreviewService.startDevServer(project, {
+      port: config?.port,
+    });
+    
+    return {
+      success: session.status === 'running',
+      previewUrl: session.previewUrl,
+      error: session.error,
+    };
+  } catch (error) {
+    const errorMsg = formatDeploymentError(error);
+    return {
+      success: false,
+      error: errorMsg,
+    };
+  }
+}
+
+/**
+ * Stop CodeSandbox development server
+ */
+export async function stopCodeSandboxDevServer(projectId: string): Promise<void> {
+  await codesandboxPreviewService.stopDevServer(projectId);
+}
+
+/**
+ * Get CodeSandbox preview session
+ */
+export function getCodeSandboxPreviewSession(projectId: string) {
+  return codesandboxPreviewService.getPreviewSession(projectId);
+}
+
+/**
+ * Check CodeSandbox preview health
+ */
+export async function checkCodeSandboxPreviewHealth(projectId: string): Promise<boolean> {
+  return await codesandboxPreviewService.checkPreviewHealth(projectId);
 }

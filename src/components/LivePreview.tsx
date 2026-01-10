@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, Loader2, AlertCircle, RefreshCw, Play, StopCircle } from 'lucide-react';
+import { Eye, Loader2, AlertCircle, RefreshCw, Play, StopCircle, Globe, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/stores/appStore';
 import { puterE2BClient } from '@/services/puterApiClient';
+import { codesandboxPreviewService } from '@/services/codesandboxPreviewService';
+import { startCodeSandboxDevServer, getCodeSandboxPreviewSession } from '@/services/deploymentService';
 
 interface LivePreviewProps {
   projectId?: string;
@@ -24,10 +26,55 @@ export const LivePreview = ({
   const [iframeKey, setIframeKey] = useState(0);
   const [isServerRunning, setIsServerRunning] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   const apiKey = settings.sandboxApiKey;
-  const healthCheckRef = useRef<NodeJS.Timeout>();
+  const healthCheckRef = useRef<any>();
+  const projectRef = useRef<any>(null);
 
-  const startServer = useCallback(async () => {
+  // Start CodeSandbox development server
+  const startCodeSandboxServer = useCallback(async (project: any) => {
+    if (!project) {
+      setError('Project not found. Please select a project first.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setConnectionStatus('connecting');
+
+    try {
+      console.log('Starting CodeSandbox dev server...');
+      setError('Starting CodeSandbox development server... this may take a minute.');
+
+      const result = await startCodeSandboxDevServer(project, { port });
+      
+      if (result.success) {
+        setIsServerRunning(true);
+        setPreviewUrl(result.previewUrl || '');
+        setConnectionStatus('connected');
+        onServerStart?.(result.previewUrl || '');
+        setError(null);
+        setIsLoading(false);
+        
+        console.log('✅ CodeSandbox server started:', result.previewUrl);
+      } else {
+        throw new Error(result.error || 'Failed to start CodeSandbox server');
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error
+        ? err.message
+        : (err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string')
+          ? (err as any).message
+          : (() => { try { return JSON.stringify(err); } catch { return String(err); } })();
+      console.error('Error starting CodeSandbox server:', errorMsg);
+      setError(errorMsg);
+      setConnectionStatus('error');
+      setIsLoading(false);
+    }
+  }, [port, onServerStart]);
+
+  // Start E2B server (fallback)
+  const startE2BServer = useCallback(async () => {
     if (!projectId || !apiKey) {
       setError('Project ID or API key missing. Please add E2B API key in settings.');
       return;
@@ -35,30 +82,28 @@ export const LivePreview = ({
 
     setIsLoading(true);
     setError(null);
+    setConnectionStatus('connecting');
 
     try {
-      console.log('Starting dev server via Puter.js...');
-      setError('Starting development server... this may take a minute.');
+      console.log('Starting E2B dev server via Puter.js...');
+      setError('Starting E2B development server... this may take a minute.');
       
-      // Start the dev server via Puter.js Worker
       const started = await puterE2BClient.startDevServer(port, apiKey, projectId);
 
       if (!started) {
-        throw new Error('Failed to start dev server. Verify your E2B API key and check your internet connection.');
+        throw new Error('Failed to start E2B dev server. Verify your E2B API key and check your internet connection.');
       }
 
-      // Generate preview URL based on project ID (will be available after server starts)
-      // Note: For Puter.js, the actual URL depends on the sandbox ID returned by E2B
       const url = `https://${projectId}.sandbox.local:${port}`;
       setPreviewUrl(url);
+      setConnectionStatus('connected');
       onServerStart?.(url);
 
-      // Start health check with longer timeout
+      // Start health check
       let healthyAttempts = 0;
-      const maxAttempts = 40; // ~80 seconds total
+      const maxAttempts = 40;
       const checkHealth = async () => {
         try {
-          // Check if the server is responding via command execution
           const result = await puterE2BClient.executeCommand(
             `curl -s -o /dev/null -w "%{http_code}" http://localhost:${port}/ 2>/dev/null || echo "000"`,
             apiKey,
@@ -78,7 +123,7 @@ export const LivePreview = ({
               healthCheckRef.current = setTimeout(checkHealth, 2000);
             } else {
               setError('Server took too long to start. Check terminal for errors or try again.');
-              setIsServerRunning(false);
+              setConnectionStatus('error');
               setIsLoading(false);
             }
           }
@@ -90,13 +135,12 @@ export const LivePreview = ({
             healthCheckRef.current = setTimeout(checkHealth, 2000);
           } else {
             setError('Server health check failed after multiple attempts. Please try again.');
-            setIsServerRunning(false);
+            setConnectionStatus('error');
             setIsLoading(false);
           }
         }
       };
 
-      // Start health check immediately
       checkHealth();
     } catch (err) {
       const errorMsg = err instanceof Error
@@ -104,8 +148,9 @@ export const LivePreview = ({
         : (err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string')
           ? (err as any).message
           : (() => { try { return JSON.stringify(err); } catch { return String(err); } })();
-      console.error('Error starting server:', errorMsg);
+      console.error('Error starting E2B server:', errorMsg);
       setError(errorMsg);
+      setConnectionStatus('error');
       setIsLoading(false);
     }
   }, [projectId, apiKey, port, onServerStart]);
@@ -116,11 +161,43 @@ export const LivePreview = ({
     }
     setIsServerRunning(false);
     setPreviewUrl(null);
-  }, []);
+    setConnectionStatus('disconnected');
+    
+    // Stop CodeSandbox server
+    if (projectId) {
+      await codesandboxPreviewService.stopDevServer(projectId);
+    }
+  }, [projectId]);
 
   const handleRefresh = useCallback(() => {
     setIframeKey(prev => prev + 1);
   }, []);
+
+  const getConnectionStatusIcon = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return <Wifi className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />;
+      case 'connecting':
+        return <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-yellow-500" />;
+      case 'error':
+        return <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />;
+      default:
+        return <Wifi className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />;
+    }
+  };
+
+  const getConnectionStatusText = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return 'Connected';
+      case 'connecting':
+        return 'Connecting...';
+      case 'error':
+        return 'Connection Error';
+      default:
+        return 'Disconnected';
+    }
+  };
 
   if (!apiKey) {
     return (
@@ -145,21 +222,24 @@ export const LivePreview = ({
       className="h-full flex flex-col bg-card/50 rounded-lg border border-border/50 overflow-hidden flex-safe"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b border-border/50 bg-background/50 flex-shrink-0">
+      <div className="flex items-center justify-between px-2 sm:px-4 py-2 border-b border-border/50 bg-background/50 flex-shrink-0">
         <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-safe">
           <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
           <span className="text-xs sm:text-sm font-medium truncate">Live Preview</span>
-          {isServerRunning && <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />}
+          <div className="flex items-center gap-1">
+            {getConnectionStatusIcon()}
+            <span className="text-xs text-muted-foreground">{getConnectionStatusText()}</span>
+          </div>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           {!isServerRunning ? (
             <Button
               variant="ghost"
               size="icon"
-              onClick={startServer}
+              onClick={startE2BServer}
               disabled={isLoading}
               className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0"
-              title="Start server"
+              title="Start E2B server"
             >
               {isLoading ? (
                 <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin text-primary" />
@@ -216,31 +296,33 @@ export const LivePreview = ({
         ) : !isServerRunning ? (
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <div className="text-center space-y-3">
-              <Eye className="w-8 h-8 sm:w-12 sm:h-12 mx-auto text-muted-foreground opacity-50" />
+              <Globe className="w-8 h-8 sm:w-12 sm:h-12 mx-auto text-muted-foreground opacity-50" />
               <div>
                 <p className="text-xs sm:text-sm font-medium">Click "Start" to preview</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Dev server will launch and display here
                 </p>
               </div>
-              <Button
-                onClick={startServer}
-                disabled={isLoading}
-                className="mt-4 gap-2"
-                size="sm"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Starting...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-3 h-3" />
-                    Start Server
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2 justify-center">
+                <Button
+                  onClick={startE2BServer}
+                  disabled={isLoading}
+                  className="mt-4 gap-2"
+                  size="sm"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-3 h-3" />
+                      Start E2B Server
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         ) : (

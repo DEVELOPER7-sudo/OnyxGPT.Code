@@ -134,25 +134,25 @@ export const SettingsDialog = ({ isOpen, onClose }: SettingsDialogProps) => {
                   </div>
                 </div>
 
-                {/* Sandbox API Key */}
+                {/* CodeSandbox API Key */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Key className="w-4 h-4 text-primary" />
-                    <h3 className="font-medium">Sandbox API Key (E2B)</h3>
+                    <h3 className="font-medium">CodeSandbox API Key</h3>
                   </div>
                   <input
                     type="password"
                     value={localSettings.sandboxApiKey}
                     onChange={(e) => setLocalSettings(prev => ({ ...prev, sandboxApiKey: e.target.value }))}
-                    placeholder="e2b_xxxxxxxxxxxxxxxx"
+                    placeholder="sandbox_xxxxxxxxxxxxxxxx"
                     className="w-full bg-secondary/50 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground/50 font-mono"
                   />
                   <p className="text-xs text-muted-foreground">
                     Optional. Get your key from{' '}
-                    <a href="https://e2b.dev" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                      e2b.dev
+                    <a href="https://codesandbox.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      codesandbox.io
                     </a>
-                    {' '}to enable code execution in sandboxes.
+                    {' '}to enable CodeSandbox integration for enhanced terminal and preview features.
                   </p>
                 </div>
 

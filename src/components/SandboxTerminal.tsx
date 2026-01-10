@@ -1,7 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { Terminal, X, Play, Square } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Terminal, X, Play, Square, Monitor, Command } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useE2BService } from '@/hooks/useE2BService';
+import { codesandboxService } from '@/services/codesandboxService';
+import { Terminal as XTerm } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import { WebLinksAddon } from 'xterm-addon-web-links';
 
 interface SandboxTerminalProps {
   isOpen: boolean;
@@ -14,21 +18,99 @@ export const SandboxTerminal = ({ isOpen, onClose, projectId }: SandboxTerminalP
   const [output, setOutput] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [terminalId, setTerminalId] = useState<string | null>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
+  const xtermRef = useRef<XTerm | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
+  const webLinksAddonRef = useRef<WebLinksAddon | null>(null);
+  
   const { executeCommand, startDevServer, killSandbox } = useE2BService();
+
+  // Initialize CodeSandbox terminal
+  const initializeCodeSandboxTerminal = useCallback(async () => {
+    if (!terminalRef.current) return;
+
+    try {
+      // Create xTerm.js terminal
+      const xterm = new XTerm({
+        theme: {
+          background: '#0d1117',
+          foreground: '#c9d1d9',
+          cursor: '#58a6ff',
+        },
+        fontSize: 14,
+        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        rows: 24,
+        cols: 80,
+      });
+
+      const fitAddon = new FitAddon();
+      const webLinksAddon = new WebLinksAddon();
+      
+      xterm.loadAddon(fitAddon);
+      xterm.loadAddon(webLinksAddon);
+
+      // Create CodeSandbox terminal
+      const newTerminalId = await codesandboxService.createTerminal(projectId, terminalRef.current);
+      
+      const sandboxTerminal = codesandboxService.getTerminal(projectId, newTerminalId);
+      if (!sandboxTerminal) {
+        throw new Error('Failed to create CodeSandbox terminal');
+      }
+
+      // Set up bidirectional communication
+      sandboxTerminal.terminal.onOutput((data: string) => {
+        xterm.write(data);
+      });
+
+      xterm.onData((data: string) => {
+        sandboxTerminal.terminal.write(data);
+      });
+
+      // Fit terminal to container
+      fitAddon.fit();
+      window.addEventListener('resize', () => fitAddon.fit());
+
+      // Attach to DOM
+      xterm.open(terminalRef.current);
+      fitAddon.fit();
+
+      xtermRef.current = xterm;
+      fitAddonRef.current = fitAddon;
+      webLinksAddonRef.current = webLinksAddon;
+      setTerminalId(newTerminalId);
+      setIsConnected(true);
+
+      // Write welcome message
+      xterm.write('\x1b[32mWelcome to CodeSandbox Terminal\x1b[0m\r\n');
+      xterm.write('Type "help" for available commands\r\n\r\n');
+    } catch (error) {
+      console.error('Failed to initialize CodeSandbox terminal:', error);
+      setIsConnected(false);
+    }
+  }, [projectId]);
 
   useEffect(() => {
     if (isOpen) {
       setOutput(['Welcome to OnyxGPT Sandbox Terminal', 'Type "help" for available commands', '']);
+      initializeCodeSandboxTerminal();
     } else {
       setOutput([]);
       setIsConnected(false);
+      if (terminalId) {
+        codesandboxService.killTerminal(projectId, terminalId);
+        setTerminalId(null);
+      }
+      if (xtermRef.current) {
+        xtermRef.current.dispose();
+        xtermRef.current = null;
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, projectId, initializeCodeSandboxTerminal]);
 
   useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    if (terminalRef.current && xtermRef.current) {
+      xtermRef.current.fit();
     }
   }, [output]);
 
@@ -50,11 +132,14 @@ export const SandboxTerminal = ({ isOpen, onClose, projectId }: SandboxTerminalP
   };
 
   const handleExecute = async () => {
-    await handleCommand(command);
-    setCommand('');
+    if (xtermRef.current && command.trim()) {
+      xtermRef.current.write(`\r\n$ ${command}\r\n`);
+      await handleCommand(command);
+      setCommand('');
+    }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: any) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleExecute();
@@ -62,8 +147,18 @@ export const SandboxTerminal = ({ isOpen, onClose, projectId }: SandboxTerminalP
   };
 
   const handlePresetCommand = (cmd: string) => {
-    setCommand(cmd);
-    setTimeout(() => handleExecute(), 100);
+    if (xtermRef.current) {
+      xtermRef.current.write(`\r\n$ ${cmd}\r\n`);
+      setCommand(cmd);
+      setTimeout(() => handleExecute(), 100);
+    }
+  };
+
+  const handleClear = () => {
+    if (xtermRef.current) {
+      xtermRef.current.clear();
+      xtermRef.current.write('\x1b[32mTerminal cleared\x1b[0m\r\n');
+    }
   };
 
   if (!isOpen) return null;
@@ -72,8 +167,8 @@ export const SandboxTerminal = ({ isOpen, onClose, projectId }: SandboxTerminalP
     <div className="fixed bottom-4 right-4 w-96 h-96 bg-card border border-border/50 rounded-lg shadow-lg z-50 glass-card">
       <div className="flex items-center justify-between p-2 border-b border-border/50 bg-card/30">
         <div className="flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium">Sandbox Terminal</span>
+          <Monitor className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium">CodeSandbox Terminal</span>
           <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
         </div>
         <div className="flex gap-1">
@@ -98,11 +193,10 @@ export const SandboxTerminal = ({ isOpen, onClose, projectId }: SandboxTerminalP
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => handlePresetCommand('ls -la')}
-            disabled={isRunning}
+            onClick={handleClear}
             className="h-8 w-8"
           >
-            <Terminal className="w-3 h-3" />
+            <Command className="w-3 h-3" />
           </Button>
           <Button
             variant="ghost"
@@ -116,21 +210,7 @@ export const SandboxTerminal = ({ isOpen, onClose, projectId }: SandboxTerminalP
       </div>
       
       <div ref={terminalRef} className="flex-1 p-2 font-mono text-sm overflow-y-auto h-[calc(100%-80px)]">
-        {output.map((line, index) => (
-          <div key={index} className="mb-1">
-            {line}
-          </div>
-        ))}
-        {isRunning && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <div className="flex gap-1">
-              <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-            <span>Executing...</span>
-          </div>
-        )}
+        {/* xTerm.js will render here */}
       </div>
       
       <div className="flex items-center gap-2 p-2 border-t border-border/50 bg-card/30">
@@ -141,13 +221,13 @@ export const SandboxTerminal = ({ isOpen, onClose, projectId }: SandboxTerminalP
           onChange={(e) => setCommand(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type a command..."
-          disabled={isRunning}
+          disabled={isRunning || !isConnected}
           className="flex-1 bg-transparent border-none outline-none text-sm font-mono"
         />
         <Button
           size="sm"
           onClick={handleExecute}
-          disabled={isRunning || !command.trim()}
+          disabled={isRunning || !command.trim() || !isConnected}
           className="gap-1"
         >
           <Play className="w-3 h-3" />
