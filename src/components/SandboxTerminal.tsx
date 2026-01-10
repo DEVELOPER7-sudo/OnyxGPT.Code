@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Terminal, X, Play, Square, Monitor, Command } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useE2BService } from '@/hooks/useE2BService';
+import { codesandboxPreviewService } from '@/services/codesandboxPreviewService';
 import { codesandboxService } from '@/services/codesandboxService';
 import { Terminal as XTerm } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
@@ -24,7 +24,7 @@ export const SandboxTerminal = ({ isOpen, onClose, projectId }: SandboxTerminalP
   const fitAddonRef = useRef<FitAddon | null>(null);
   const webLinksAddonRef = useRef<WebLinksAddon | null>(null);
   
-  const { executeCommand, startDevServer, killSandbox } = useE2BService();
+  // E2B service removed - using CodeSandbox SDK instead
 
   // Initialize CodeSandbox terminal
   const initializeCodeSandboxTerminal = useCallback(async () => {
@@ -121,8 +121,8 @@ export const SandboxTerminal = ({ isOpen, onClose, projectId }: SandboxTerminalP
     setIsRunning(true);
 
     try {
-      const result = await executeCommand(cmd, projectId);
-      setOutput(prev => [...prev, result.stdout, result.stderr ? `Error: ${result.stderr}` : '']);
+      // Command execution handled by CodeSandbox terminal directly
+      // Output is written to xTerm.js in real-time
       setIsConnected(true);
     } catch (error) {
       setOutput(prev => [...prev, `Error: ${error instanceof Error ? error.message : String(error)}`]);
